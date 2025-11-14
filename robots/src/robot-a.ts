@@ -3,6 +3,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
+import WebSocket from "ws";
 
 const DOC_NAME = process.env.DOC_NAME ?? "shared-doc";
 const SERVER_ENDPOINT =
@@ -47,7 +48,8 @@ const runScenario = async (): Promise<void> => {
 
   const doc = new Y.Doc();
   const provider = new WebsocketProvider(SERVER_ENDPOINT, DOC_NAME, doc, {
-    connect: true
+    connect: true,
+    WebSocketPolyfill: WebSocket as unknown as typeof globalThis.WebSocket
   });
   const yText = doc.getText("shared-text");
   const undoManager = new Y.UndoManager(yText, {
