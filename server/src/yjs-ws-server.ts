@@ -1,4 +1,6 @@
 import type { IncomingMessage } from "http";
+import fs from "fs";
+import path from "path";
 import WebSocket, { RawData } from "ws";
 import * as Y from "yjs";
 import * as encoding from "lib0/encoding";
@@ -12,6 +14,16 @@ const messageSync = 0;
 const messageAwareness = 1;
 const messageAuth = 2;
 const messageQueryAwareness = 3;
+
+const DATA_DIR = path.resolve(process.cwd(), "data");
+const getDocFilePath = (docName: string): string =>
+  path.join(DATA_DIR, `${docName}.bin`);
+
+const ensureDataDir = (): void => {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+};
 
 const permissionDeniedHandler: authProtocol.PermissionDeniedHandler = (
   _ydoc,
@@ -81,6 +93,43 @@ const broadcastAwareness = (
   });
 };
 
+const loadDocFromDisk = (doc: WSSharedDoc): void => {
+  ensureDataDir();
+  const filePath = getDocFilePath(doc.name);
+  try {
+    const data = fs.readFileSync(filePath);
+    if (data.length === 0) {
+      return;
+    }
+    const update = new Uint8Array(
+      data.buffer,
+      data.byteOffset,
+      data.byteLength
+    );
+    Y.applyUpdate(doc, update);
+    console.log(`Loaded persisted state for doc "${doc.name}"`);
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code !== "ENOENT") {
+      console.error(
+        `Failed to load persisted doc "${doc.name}" from disk`,
+        err
+      );
+    }
+  }
+};
+
+const persistDocState = (doc: WSSharedDoc): void => {
+  ensureDataDir();
+  const filePath = getDocFilePath(doc.name);
+  const update = Y.encodeStateAsUpdate(doc);
+  fs.writeFile(filePath, Buffer.from(update), (error) => {
+    if (error) {
+      console.error(`Failed to persist doc "${doc.name}"`, error);
+    }
+  });
+};
+
 const setupDoc = (docName: string, gc = true): WSSharedDoc => {
   let doc = docs.get(docName);
   if (doc) {
@@ -91,6 +140,7 @@ const setupDoc = (docName: string, gc = true): WSSharedDoc => {
   doc = new WSSharedDoc(docName);
   doc.gc = gc;
   docs.set(docName, doc);
+  loadDocFromDisk(doc);
 
   doc.on("update", (update, origin) => {
     const encoder = encoding.createEncoder();
@@ -102,6 +152,7 @@ const setupDoc = (docName: string, gc = true): WSSharedDoc => {
         send(conn, message);
       }
     });
+    persistDocState(doc!);
   });
 
   doc.awareness.on(

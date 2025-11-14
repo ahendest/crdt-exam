@@ -30,6 +30,7 @@ crdt-collab/
 - TypeScript tooling bootstrapped for `server/` and `robots/` (tsc, ts-node-dev, strict mode).
 - WebSocket sync server online with manual Yjs doc registry and awareness handling (`server/src/index.ts`, `server/src/yjs-ws-server.ts`).
 - Robot scaffolding in place (will connect as headless editors in later steps).
+- React browser client connects to the shared `Y.Text`, shows live presence, and exposes per-client undo/redo so humans can collaborate alongside the robots.
 
 ## Development Setup
 1. **Prerequisites**: Node.js LTS (>=18 recommended) and npm.
@@ -52,13 +53,18 @@ Development stubs live in `robots/src`. Example watch command while building Rob
 ```bash
 npm run dev:a --prefix robots
 ```
-Later we will add Robot B and scenario scripts that:
+Robot A now connects to the shared doc, writes a greeting, randomly performs a per-client undo, and disconnects. To point it at a remote server set `WS_ENDPOINT=ws://host:port`.
+Later we will add Robot B and coordinated scenario scripts that:
 - Connect/disconnect to simulate flaky networks.
 - Perform per-client undo (`UndoManager` with `trackedOrigins`).
 - Assert deterministic convergence after conflict heavy sequences.
 
-### Browser Client (upcoming)
-The React app in `client/` will host the collaborative editor UI. It will import `y-websocket` client provider, bind `Y.Text` to a textarea, and expose undo/redo controls once identity + UndoManager plumbing lands.
+### Browser Client
+```bash
+npm start --prefix client
+```
+- Default WebSocket endpoint: `ws://localhost:1234`. Override via `REACT_APP_WS_ENDPOINT=ws://your-host:port npm start --prefix client`.
+- Features: collaborative textarea bound to `shared-doc`, per-client identity with editable display names, undo/redo buttons scoped to the local origin, and a presence list showing all peers (browser tabs + robots).
 
 ## Per-Client Identity & Undo (Design)
 - Each peer (browser tab or robot) generates a stable UUID and stores it (localStorage for browsers, file/env for robots).
@@ -87,6 +93,7 @@ The React app in `client/` will host the collaborative editor UI. It will import
 - `Cannot find module 'ws'` or `@types/ws`: ensure `npm install` ran in the root workspace so dependencies are hoisted.
 - `Package subpath './server' is not defined by "exports" in y-websocket`: we ship a local `yjs-ws-server.ts` helper and no longer import internal y-websocket paths.
 - Port conflicts on 1234: export `PORT=5678` (PowerShell `setx PORT 5678`) and restart the server.
+- Server persistence snapshots live in `server/data/`. Delete the corresponding `.bin` file if you want to reset the shared document.
 
 ## Contributing Notes
 - Keep code strictly typed; use `doc.transact` wrappers and add succinct comments only when logic is non-obvious.

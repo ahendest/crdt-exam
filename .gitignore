@@ -16,3 +16,9 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Server persistence snapshots
+server/data/
+
+# Robot identity cache files
+robots/.robot-*-id
