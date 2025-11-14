@@ -62,10 +62,6 @@ const runScenario = async (): Promise<void> => {
     }
   });
 
-  provider.on("status", (event: { status: string }) => {
-    log(`status -> ${event.status}`);
-  });
-
   provider.on("connection-error", (event: unknown) => {
     log(`connection error ${(event as Error)?.message ?? event}`);
   });
@@ -73,6 +69,8 @@ const runScenario = async (): Promise<void> => {
   provider.on("connection-close", () => {
     log("connection closed");
   });
+
+  let scenarioStarted = false;
 
   const performActions = async () => {
     const timestamp = new Date().toISOString();
@@ -107,8 +105,10 @@ const runScenario = async (): Promise<void> => {
     process.exit(0);
   };
 
-  provider.once("status", async (event: { status: string }) => {
-    if (event.status === "connected") {
+  provider.on("status", async (event: { status: string }) => {
+    log(`status -> ${event.status}`);
+    if (!scenarioStarted && event.status === "connected") {
+      scenarioStarted = true;
       await performActions();
     }
   });
