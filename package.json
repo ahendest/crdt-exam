@@ -1,0 +1,14 @@
+{
+  "name": "crdt-collab",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client",
+    "robots"
+  ],
+  "scripts": {
+    "build": "echo \"(placeholder)\"",
+    "start": "echo \"(placeholder)\""
+  }
+}
