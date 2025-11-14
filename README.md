@@ -32,6 +32,31 @@ crdt-collab/
 - Robot scaffolding in place (will connect as headless editors in later steps).
 - React browser client connects to the shared `Y.Text`, shows live presence, and exposes per-client undo/redo so humans can collaborate alongside the robots.
 
+## Quick Start
+1. **Install dependencies** (run once from the repository root):
+   ```bash
+   npm install
+   ```
+2. **Start the Yjs sync server** in a dedicated terminal:
+   ```bash
+   npm run dev --workspace server
+   # or: npm run dev --prefix server
+   ```
+   The server listens on `http://localhost:1234`. Override the port with `PORT=5678 npm run dev --workspace server`.
+3. **Launch the browser client** from another terminal:
+   ```bash
+   npm start --workspace client
+   # or: npm start --prefix client
+   ```
+   The React development server proxies WebSocket traffic to the sync server. Set `REACT_APP_WS_ENDPOINT` if the server runs elsewhere.
+4. *(Optional)* **Run the headless Robot A editor**:
+   ```bash
+   npm run dev:a --workspace robots
+   ```
+   It connects to the same document and performs scripted edits to exercise conflict resolution.
+
+Once all three processes are running, open the browser client (default `http://localhost:3000`) and you should see real-time edits from both humans and robots converging via Yjs.
+
 ## Development Setup
 1. **Prerequisites**: Node.js LTS (>=18 recommended) and npm.
 2. **Install dependencies** (runs once from repo root):
@@ -61,7 +86,8 @@ Later we will add Robot B and coordinated scenario scripts that:
 
 ### Browser Client
 ```bash
-npm start --prefix client
+npm start --workspace client
+# or: npm start --prefix client
 ```
 - Default WebSocket endpoint: `ws://localhost:1234`. Override via `REACT_APP_WS_ENDPOINT=ws://your-host:port npm start --prefix client`.
 - Features: collaborative textarea bound to `shared-doc`, per-client identity with editable display names, undo/redo buttons scoped to the local origin, and a presence list showing all peers (browser tabs + robots).
